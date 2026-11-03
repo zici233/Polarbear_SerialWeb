@@ -4950,11 +4950,13 @@
       backdrop-filter: var(--overlay-blur);
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.18s ease;
+      visibility: hidden;
+      transition: opacity 0.18s ease, visibility 0.18s ease;
     }
 
     .version-modal-backdrop.open {
       opacity: 1;
+      visibility: visible;
       pointer-events: auto;
     }
 
@@ -6319,7 +6321,6 @@
   <script>
     (() => {
       const VERSION = '2.1';
-      const VERSION_MODAL_SEEN_KEY = 'serialweb:version-modal-seen';
       const MAX_DERIVED_LOG_LINES = 320;
       const SERIAL_BUFFER_SIZE = 65536;
       const PRESET_EXPECTATION_TIMEOUT_MS = 1800;
@@ -6697,7 +6698,6 @@
         timelineExportOpenId: null,
         chartPickerOpenId: '',
         pendingConfigAction: '',
-        versionModalMarkOnClose: false,
           terminalAtBottom: true,
           windowFocused: document.hasFocus(),
           textRuleGhostVisible: false,
@@ -8258,37 +8258,6 @@
       function closeVersionModal() {
         refs.versionModalBackdrop?.classList.remove('open');
         refs.versionModalBackdrop?.setAttribute('aria-hidden', 'true');
-        if (state.ui.versionModalMarkOnClose) {
-          state.ui.versionModalMarkOnClose = false;
-          markVersionModalSeen();
-        }
-      }
-
-      function hasSeenVersionModal() {
-        try {
-          return localStorage.getItem(VERSION_MODAL_SEEN_KEY) === VERSION;
-        } catch (error) {
-          return true;
-        }
-      }
-
-      function markVersionModalSeen() {
-        try {
-          localStorage.setItem(VERSION_MODAL_SEEN_KEY, VERSION);
-        } catch (error) {
-          console.warn('save version modal flag failed', error);
-        }
-      }
-
-      function openInitialVersionModalIfNeeded() {
-        if (hasSeenVersionModal()) return;
-        markVersionModalSeen();
-        requestAnimationFrame(() => openVersionModal());
-      }
-
-      function openVersionModalAfterReset() {
-        state.ui.versionModalMarkOnClose = true;
-        requestAnimationFrame(() => openVersionModal());
       }
 
       function isLocalOfflineRuntime() {
@@ -15333,7 +15302,7 @@
       }
 
       function clearSerialWebStoredUserData() {
-        const explicitKeys = [LOCAL_PREFS_KEY, VERSION_MODAL_SEEN_KEY, 'wsl-layout'];
+        const explicitKeys = [LOCAL_PREFS_KEY, 'serialweb:version-modal-seen', 'wsl-layout'];
         const clearFromStorage = (storage) => {
           if (!storage) return;
           explicitKeys.forEach((key) => {
@@ -15431,7 +15400,6 @@
         syncOverlayBackdropState();
         renderTimelineSelect();
         toast('已还原', '已恢复默认配置，仅保留示例项。', 'success');
-        openVersionModalAfterReset();
       }
 
       function addRecognizedCharts() {
@@ -16980,7 +16948,6 @@
           );
         });
         requestAnimationFrame(() => requestAnimationFrame(forceTerminalToLatest));
-        openInitialVersionModalIfNeeded();
       }
 
       window.addEventListener('beforeunload', () => {
