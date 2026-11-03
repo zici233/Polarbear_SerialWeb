@@ -5587,10 +5587,15 @@
     .robot-dashboard-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .robot-protocol-select { width: min(260px, 55%); }
     .robot-unit-select { width: 145px; flex-shrink: 0; }
-    .robot-imu-layout { display: grid; grid-template-columns: minmax(180px, 0.85fr) minmax(280px, 1.4fr); gap: 14px; }
+    .robot-imu-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.4fr); gap: 14px; }
     .robot-attitude { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 230px; border: 1px solid var(--border); border-radius: 16px; background: var(--bg-panel-strong); }
-    .robot-attitude canvas { width: 100%; height: 210px; display: block; }
-    .robot-attitude > span { padding-bottom: 12px; }
+    .robot-attitude canvas { width: 100%; height: 280px; display: block; }
+    .robot-axis-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; padding: 0 12px 14px; font-size: 12px; }
+    .robot-axis-legend span { white-space: nowrap; }
+    .robot-axis-legend span::before, .robot-imu-card strong::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--imu-axis-color); }
+    [data-imu-axis="yaw"] { --imu-axis-color: #22c55e; }
+    [data-imu-axis="pitch"] { --imu-axis-color: #3b82f6; }
+    [data-imu-axis="roll"] { --imu-axis-color: #ef4444; }
     .robot-imu-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .robot-imu-card { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 14px 10px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-panel-strong); }
     .robot-imu-card strong { font-size: 12px; color: var(--muted); }
@@ -5601,7 +5606,7 @@
     .robot-protocol-help { color: var(--muted); font-size: 12px; line-height: 1.7; }
     .robot-protocol-help summary { cursor: pointer; }
     .robot-protocol-help a { color: var(--accent); }
-    @media (max-width: 1080px) { .robot-imu-layout { grid-template-columns: 1fr; } .robot-attitude { min-height: 190px; } .robot-attitude canvas { height: 170px; } }
+    @media (max-width: 1080px) { .robot-imu-layout { grid-template-columns: 1fr; } .robot-attitude canvas { height: 260px; } }
     @media (max-width: 480px) { .robot-imu-values { grid-template-columns: repeat(2, minmax(0, 1fr)); } .robot-dashboard-head { align-items: flex-start; } .robot-unit-select { width: 110px; } }
     .scope-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 12px 0; }
     .scope-header > strong { font-size: 13px; overflow-wrap: anywhere; }
@@ -5970,7 +5975,12 @@
               <div class="field robot-unit-select"><label for="robot-angle-unit">面板角度单位</label><select id="robot-angle-unit"><option value="deg">° / °/s</option><option value="rad">rad / rad/s</option></select></div>
             </div>
             <div class="robot-imu-layout">
-              <div class="robot-attitude"><canvas id="robot-attitude-canvas" role="img" aria-label="IMU 三维姿态示意"></canvas><span class="panel-subtitle">机体坐标系 · X / Y / Z</span></div>
+              <div class="robot-attitude">
+                <canvas id="robot-attitude-canvas" role="img" aria-label="IMU 三维立方体姿态：Yaw 偏航绕 Z 轴，Pitch 俯仰绕 Y 轴，Roll 横滚绕 X 轴"></canvas>
+                <div class="robot-axis-legend" aria-label="机体旋转轴">
+                  <span data-imu-axis="yaw">Yaw 偏航 · Z</span><span data-imu-axis="pitch">Pitch 俯仰 · Y</span><span data-imu-axis="roll">Roll 横滚 · X</span>
+                </div>
+              </div>
               <div id="robot-imu-values" class="robot-imu-values"></div>
             </div>
             <section id="robot-other-info" class="robot-other-info" aria-labelledby="robot-other-info-title">
@@ -11452,7 +11462,7 @@
         refs.robotImuValues.innerHTML = ROBOT_IMU_FIELDS.map((name) => {
           const value = imu ? (imu.values['imu.' + name] * scale).toFixed(3) : '—';
           const unit = degrees ? (name.endsWith('_vel') ? '°/s' : '°') : (name.endsWith('_vel') ? 'rad/s' : 'rad');
-          return `<div class="robot-imu-card"><strong>${ROBOT_IMU_LABELS[name]}</strong><b>${value}</b><small>${unit}</small></div>`;
+          return `<div class="robot-imu-card" data-imu-axis="${name.split('_')[0]}"><strong>${ROBOT_IMU_LABELS[name]}</strong><b>${value}</b><small>${unit}</small></div>`;
         }).join('');
         const lastId = robot.lastId === null ? '—' : '0x' + robot.lastId.toString(16).padStart(2, '0').toUpperCase();
         refs.robotProtocolStatus.innerHTML = [`有效帧 ${robot.valid}`, `CRC8 错误 ${robot.crc8Errors}`, `CRC16 错误 ${robot.crc16Errors}`, `载荷错误 ${robot.payloadErrors}`, `未支持 ID ${robot.unknown}`, `待接收 ${robot.buffer.length} B`, `最近 ID ${lastId}`].map((text) => `<span>${text}</span>`).join('');
@@ -11471,26 +11481,103 @@
         ctx.scale(dpr, dpr);
         const yaw = values?.['imu.yaw'] || 0, pitch = values?.['imu.pitch'] || 0, roll = values?.['imu.roll'] || 0;
         const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), cr = Math.cos(roll), sr = Math.sin(roll);
+        // Right-handed body orientation: Rz(yaw) * Ry(pitch) * Rx(roll).
         const rotate = ([x, y, z]) => [cy * cp * x + (cy * sp * sr - sy * cr) * y + (cy * sp * cr + sy * sr) * z, sy * cp * x + (sy * sp * sr + cy * cr) * y + (sy * sp * cr - cy * sr) * z, -sp * x + cp * sr * y + cp * cr * z];
-        const size = Math.min(width * 0.26, height * 0.32);
-        const project = ([x, y, z]) => [width / 2 + (x - y * 0.5) * size, height / 2 + (x * 0.25 + y * 0.4 - z) * size];
-        const corners = [[-0.9,-0.55,-0.18],[0.9,-0.55,-0.18],[0.9,0.55,-0.18],[-0.9,0.55,-0.18],[-0.9,-0.55,0.18],[0.9,-0.55,0.18],[0.9,0.55,0.18],[-0.9,0.55,0.18]].map((point) => project(rotate(point)));
-        ctx.fillStyle = 'rgba(130,130,250,0.16)';
-        ctx.strokeStyle = '#8585fa';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        [4,5,6,7].forEach((i, n) => n ? ctx.lineTo(...corners[i]) : ctx.moveTo(...corners[i]));
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-        [[0,1],[1,2],[2,3],[3,0],[0,4],[1,5],[2,6],[3,7]].forEach(([a,b]) => { ctx.beginPath(); ctx.moveTo(...corners[a]); ctx.lineTo(...corners[b]); ctx.stroke(); });
-        const origin = project([0,0,0]);
-        [[[1.5,0,0], '#ef6868', 'X'], [[0,1.5,0], '#30ba91', 'Y'], [[0,0,1.5], '#689cf5', 'Z']].forEach(([point, color, label]) => {
-          const target = project(rotate(point));
-          ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.moveTo(...origin); ctx.lineTo(...target); ctx.stroke();
-          ctx.font = 'bold 13px sans-serif'; ctx.fillText(label, target[0] + 5, target[1] - 5);
+        const elevation = Math.PI / 7;
+        const se = Math.sin(elevation), ce = Math.cos(elevation), diagonal = Math.SQRT1_2;
+        const size = Math.min((width - 76) / 3.6, (height - 56) / 3.5);
+        const project = ([x, y, z]) => [width / 2 + (x - y) * diagonal * size, height / 2 + ((x + y) * diagonal * se - z * ce) * size];
+        const depth = ([x, y, z]) => (x + y) * diagonal * ce + z * se;
+        const corners = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]].map(point => rotate(point.map(value => value * 0.72)));
+        const faces = [
+          { vertices: [0,3,2,1], normal: [0,0,-1] }, { vertices: [4,5,6,7], normal: [0,0,1] },
+          { vertices: [0,1,5,4], normal: [0,-1,0] }, { vertices: [3,7,6,2], normal: [0,1,0] },
+          { vertices: [0,4,7,3], normal: [-1,0,0] }, { vertices: [1,2,6,5], normal: [1,0,0] }
+        ];
+        const scene = [];
+        ctx.lineJoin = 'round';
+        faces.forEach(face => {
+          const normal = rotate(face.normal);
+          if (depth(normal) <= 0) return;
+          scene.push({ depth: face.vertices.reduce((sum, i) => sum + depth(corners[i]), 0) / 4, draw: () => {
+            const light = Math.max(0, normal[0] * -0.3 + normal[1] * -0.4 + normal[2] * 0.866);
+            ctx.fillStyle = `rgb(${Math.round(10 + light * 35)}, ${Math.round(112 + light * 55)}, ${Math.round(222 + light * 33)})`;
+            ctx.strokeStyle = 'rgba(15, 100, 210, 0.55)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            face.vertices.forEach((i, n) => n ? ctx.lineTo(...project(corners[i])) : ctx.moveTo(...project(corners[i])));
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+          } });
         });
-        if (!values) { ctx.fillStyle = getComputedStyle(appEl).getPropertyValue('--muted'); ctx.font = '12px sans-serif'; ctx.fillText('等待姿态数据', 12, height - 10); }
+        const axes = [
+          { vector: [1,0,0], color: '#ef4444', label: 'X · Roll' },
+          { vector: [0,1,0], color: '#3b82f6', label: 'Y · Pitch' },
+          { vector: [0,0,1], color: '#22c55e', label: 'Z · Yaw' }
+        ];
+        axes.forEach(axis => {
+          const direction = rotate(axis.vector);
+          [-1, 1].forEach(sign => {
+            const a = direction.map(value => value * 0.72 * sign);
+            const b = direction.map(value => value * (sign > 0 ? 1.85 : 1.35) * sign);
+            scene.push({ depth: depth(a), draw: () => {
+              const from = project(a), to = project(b);
+              ctx.strokeStyle = axis.color; ctx.fillStyle = axis.color;
+              ctx.globalAlpha = sign > 0 ? 1 : 0.35;
+              ctx.lineWidth = sign > 0 ? 2.5 : 1.5;
+              ctx.beginPath(); ctx.moveTo(...from); ctx.lineTo(...to); ctx.stroke();
+              if (sign > 0) {
+                const angle = Math.atan2(to[1] - from[1], to[0] - from[0]);
+                ctx.beginPath(); ctx.moveTo(...to);
+                ctx.lineTo(to[0] - 11 * Math.cos(angle - 0.4), to[1] - 11 * Math.sin(angle - 0.4));
+                ctx.lineTo(to[0] - 11 * Math.cos(angle + 0.4), to[1] - 11 * Math.sin(angle + 0.4));
+                ctx.closePath(); ctx.fill();
+              }
+              ctx.globalAlpha = 1;
+            } });
+          });
+        });
+        scene.sort((a, b) => a.depth - b.depth).forEach(item => item.draw());
+        const theme = getComputedStyle(appEl);
+        const labelBackground = theme.getPropertyValue('--bg').trim();
+        const labelText = theme.getPropertyValue('--text').trim();
+        const placed = [];
+        ctx.font = '600 12px "Segoe UI", sans-serif';
+        axes.forEach(axis => {
+          const tip = project(rotate(axis.vector.map(value => value * 1.85)));
+          const dx = tip[0] - width / 2, dy = tip[1] - height / 2;
+          const length = Math.hypot(dx, dy) || 1;
+          const boxWidth = ctx.measureText(axis.label).width + 18, boxHeight = 25;
+          const labelRadius = Math.max(length, size * 1.6);
+          const ux = length > 1 ? dx / length : 1, uy = length > 1 ? dy / length : 0;
+          let x = Math.max(6, Math.min(width - boxWidth - 6, width / 2 + ux * (labelRadius + boxWidth / 2 + 10) - boxWidth / 2));
+          let y = Math.max(6, Math.min(height - boxHeight - 6, height / 2 + uy * (labelRadius + boxHeight / 2 + 10) - boxHeight / 2));
+          for (let attempt = 0; attempt < 6; attempt += 1) {
+            const overlap = placed.find(box => x < box.x + box.width + 4 && x + boxWidth + 4 > box.x && y < box.y + boxHeight + 4 && y + boxHeight + 4 > box.y);
+            if (!overlap) break;
+            y = overlap.y + boxHeight + 5;
+            if (y + boxHeight > height - 6) y = overlap.y - boxHeight - 5;
+          }
+          placed.push({ x, y, width: boxWidth });
+          if (length < size * 1.6) {
+            ctx.strokeStyle = axis.color; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+            ctx.beginPath(); ctx.moveTo(...tip); ctx.lineTo(x + boxWidth / 2, y + boxHeight / 2); ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          ctx.fillStyle = labelBackground;
+          ctx.strokeStyle = axis.color;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.roundRect(x, y, boxWidth, boxHeight, 6); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = labelText;
+          ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+          ctx.fillText(axis.label, x + boxWidth / 2, y + boxHeight / 2);
+        });
+        ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+        if (!values) {
+          ctx.fillStyle = theme.getPropertyValue('--text-soft').trim();
+          ctx.font = '12px sans-serif'; ctx.fillText('等待姿态数据 · 当前为零位示意', 12, height - 10);
+        }
       }
+
 
       function getParserSignature() {
         if (state.parserMode === 'robot') return 'robot|standardrobot-v1';
