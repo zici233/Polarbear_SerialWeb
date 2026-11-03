@@ -5592,6 +5592,7 @@
     .robot-attitude canvas { width: 100%; height: 280px; display: block; }
     .robot-axis-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; padding: 0 12px 14px; font-size: 12px; }
     .robot-axis-legend span { white-space: nowrap; }
+    .robot-reference-note { padding: 0 12px 12px; color: var(--text-soft); font-size: 11px; text-align: center; line-height: 1.6; }
     .robot-axis-legend span::before, .robot-imu-card strong::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--imu-axis-color); }
     [data-imu-axis="yaw"] { --imu-axis-color: #22c55e; }
     [data-imu-axis="pitch"] { --imu-axis-color: #3b82f6; }
@@ -5976,10 +5977,11 @@
             </div>
             <div class="robot-imu-layout">
               <div class="robot-attitude">
-                <canvas id="robot-attitude-canvas" role="img" aria-label="IMU 三维立方体姿态：Yaw 偏航绕 Z 轴，Pitch 俯仰绕 Y 轴，Roll 横滚绕 X 轴"></canvas>
+                <canvas id="robot-attitude-canvas" role="img" aria-label="IMU 三维立方体姿态与固定参考坐标系：背景网格和虚线参考轴保持不动，机体实线轴随姿态旋转；Yaw 绕 Z，Pitch 绕 Y，Roll 绕 X"></canvas>
                 <div class="robot-axis-legend" aria-label="机体旋转轴">
                   <span data-imu-axis="yaw">Yaw 偏航 · Z</span><span data-imu-axis="pitch">Pitch 俯仰 · Y</span><span data-imu-axis="roll">Roll 横滚 · X</span>
                 </div>
+                <div class="robot-reference-note">背景网格 / 虚线轴：固定参考系 · 实线彩轴：机体坐标系</div>
               </div>
               <div id="robot-imu-values" class="robot-imu-values"></div>
             </div>
@@ -11488,6 +11490,58 @@
         const size = Math.min((width - 76) / 3.6, (height - 56) / 3.5);
         const project = ([x, y, z]) => [width / 2 + (x - y) * diagonal * size, height / 2 + ((x + y) * diagonal * se - z * ce) * size];
         const depth = ([x, y, z]) => (x + y) * diagonal * ce + z * se;
+        const theme = getComputedStyle(appEl);
+        // World coordinates share the body origin and camera, but never use rotate().
+        const extent = 1.35, floor = -1.1, ceiling = 1.25;
+        const referenceLine = (from, to) => {
+          ctx.beginPath(); ctx.moveTo(...project(from)); ctx.lineTo(...project(to)); ctx.stroke();
+        };
+        ctx.save();
+        ctx.fillStyle = theme.getPropertyValue('--accent').trim();
+        ctx.globalAlpha = 0.035;
+        [
+          [[-extent,-extent,floor],[extent,-extent,floor],[extent,extent,floor],[-extent,extent,floor]],
+          [[-extent,-extent,floor],[-extent,extent,floor],[-extent,extent,ceiling],[-extent,-extent,ceiling]],
+          [[-extent,-extent,floor],[extent,-extent,floor],[extent,-extent,ceiling],[-extent,-extent,ceiling]]
+        ].forEach(plane => {
+          ctx.beginPath();
+          plane.forEach((point, i) => i ? ctx.lineTo(...project(point)) : ctx.moveTo(...project(point)));
+          ctx.closePath(); ctx.fill();
+        });
+        ctx.strokeStyle = theme.getPropertyValue('--text-soft').trim();
+        ctx.globalAlpha = 0.22; ctx.lineWidth = 0.8;
+        for (let i = 0; i <= 6; i += 1) {
+          const offset = -extent + 2 * extent * i / 6;
+          const z = floor + (ceiling - floor) * i / 6;
+          referenceLine([offset,-extent,floor], [offset,extent,floor]);
+          referenceLine([-extent,offset,floor], [extent,offset,floor]);
+          referenceLine([-extent,offset,floor], [-extent,offset,ceiling]);
+          referenceLine([offset,-extent,floor], [offset,-extent,ceiling]);
+          referenceLine([-extent,-extent,z], [-extent,extent,z]);
+          referenceLine([-extent,-extent,z], [extent,-extent,z]);
+        }
+        ctx.globalAlpha = 0.6; ctx.lineWidth = 1.2;
+        ctx.font = '600 11px "Segoe UI", sans-serif';
+        ctx.textBaseline = 'middle';
+        [
+          { vector: [1,0,0], color: '#ef4444', label: 'X₀', offset: [10,-12], align: 'left' },
+          { vector: [0,1,0], color: '#3b82f6', label: 'Y₀', offset: [-10,-12], align: 'right' },
+          { vector: [0,0,1], color: '#22c55e', label: 'Z₀', offset: [-36,8], align: 'right' }
+        ].forEach(axis => {
+          const from = axis.vector.map(value => value * -1.8);
+          const to = axis.vector.map(value => value * 2.05);
+          ctx.strokeStyle = axis.color; ctx.fillStyle = axis.color;
+          ctx.setLineDash([4, 4]); referenceLine(from, to); ctx.setLineDash([]);
+          const origin = project([0,0,0]), tip = project(to);
+          const angle = Math.atan2(tip[1] - origin[1], tip[0] - origin[0]);
+          ctx.beginPath(); ctx.moveTo(...tip);
+          ctx.lineTo(tip[0] - 7 * Math.cos(angle - 0.45), tip[1] - 7 * Math.sin(angle - 0.45));
+          ctx.lineTo(tip[0] - 7 * Math.cos(angle + 0.45), tip[1] - 7 * Math.sin(angle + 0.45));
+          ctx.closePath(); ctx.fill();
+          ctx.textAlign = axis.align;
+          ctx.fillText(axis.label, tip[0] + axis.offset[0], tip[1] + axis.offset[1]);
+        });
+        ctx.restore();
         const corners = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]].map(point => rotate(point.map(value => value * 0.72)));
         const faces = [
           { vertices: [0,3,2,1], normal: [0,0,-1] }, { vertices: [4,5,6,7], normal: [0,0,1] },
@@ -11537,7 +11591,6 @@
           });
         });
         scene.sort((a, b) => a.depth - b.depth).forEach(item => item.draw());
-        const theme = getComputedStyle(appEl);
         const labelBackground = theme.getPropertyValue('--bg').trim();
         const labelText = theme.getPropertyValue('--text').trim();
         const placed = [];
