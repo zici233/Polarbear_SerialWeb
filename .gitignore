@@ -1,1 +1,13 @@
 node_modules/
+
+# Local test data and generated test output
+/test-data/
+/tests/data/
+/tests/fixtures/
+/tests/output/
+/test-results/
+/playwright-report/
+
+# Temporary screenshots and generated preview images
+/screenshots/
+/docs/*-preview.png
