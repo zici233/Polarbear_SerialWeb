@@ -181,7 +181,7 @@ StandardRobot++ 模式下，机器人运行数据在 IMU 下方分组显示；�
 
 ```
 index.html                            # 应用本体（单文件）
-release/vX.Y/                         # 历史版本快照（index.html + LICENSE + README.md）
+release/v2.1/                         # 仅保留最新的历史版本快照（index.html + LICENSE + README.md）
 skills/html-webserial-app/SKILL.md    # 面向 AI/开发者的实战开发指南
 ai/agent-prompt.md                    # 内嵌提示词的唯一来源
 tools/sync-agent-prompt.mjs           # 提示词注入 / 校验脚本

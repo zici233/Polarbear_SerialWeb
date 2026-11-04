@@ -34,7 +34,7 @@ SerialWeb：一个网页串口工作台。通过 Web Serial API 连接串口设�
 
 ```
 index.html          # 应用本体（单文件）
-release/vX.Y/       # 历史版本快照
+release/v2.1/       # 仅保留最新的历史版本快照
 skills/             # 给 AI 的实战指南（见上）
 AGENTS.md           # 本文件
 LICENSE / README.md

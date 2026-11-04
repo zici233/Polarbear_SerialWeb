@@ -18,4 +18,4 @@
 ## 说明
 
 - 生成/更新时机：`index.html` 的内嵌提示词由 `tools/sync-agent-prompt.mjs` 从 `ai/agent-prompt.md` 注入，保证两者一致。
-- 历史版本快照位于 `release/vX.Y/`。
+- 历史版本快照仅保留 `release/v2.1/`。

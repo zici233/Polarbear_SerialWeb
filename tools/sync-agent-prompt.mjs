@@ -4,7 +4,7 @@
  *
  * 用法：
  *   node tools/sync-agent-prompt.mjs                          # 写入 index.html
- *   node tools/sync-agent-prompt.mjs release/v2.0/index.html  # 同时写入其它副本
+ *   node tools/sync-agent-prompt.mjs release/v2.1/index.html  # 同时写入其它副本
  *   node tools/sync-agent-prompt.mjs --check                  # 只检查是否已同步（CI 可用）
  *
  * 原理：用 ai/agent-prompt.md 的正文重建 index.html 里
