@@ -5224,36 +5224,6 @@
       text-decoration: underline;
     }
 
-    .version-changelog {
-      display: grid;
-      gap: 10px;
-    }
-
-    .version-changelog-title {
-      font-size: 13px;
-      font-weight: 850;
-      color: var(--text);
-    }
-
-    .version-release {
-      display: grid;
-      gap: 6px;
-    }
-
-    .version-release strong {
-      font-size: 13px;
-      font-weight: 850;
-      color: var(--text);
-    }
-
-    .version-changelog ul {
-      margin: 0;
-      padding-left: 18px;
-      color: var(--text-soft);
-      font-size: 13px;
-      line-height: 1.58;
-    }
-
     .sr-only {
       position: absolute;
       width: 1px;
@@ -6225,98 +6195,6 @@
           <div class="version-info-cell">
             <strong>当前版本</strong>
             <span id="version-current-label">在线版本 v2.0</span>
-          </div>
-        </div>
-        <div class="version-changelog">
-          <div class="version-changelog-title">更新日志</div>
-          <div class="version-release">
-            <strong>v2.1 版本 · 26/10/19</strong>
-            <ul>
-              <li>优化重新加载时自动连接上次使用的串口设备的逻辑。</li>
-              <li>更改文本解析规则限定为单行，回车与换行不再参与解析。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v2.0 版本 · 26/10/5</strong>
-            <ul>
-              <li>优化版本详情页的显示效果与信息布局，并修复弹窗的遮挡问题。</li>
-              <li>嵌入可供 AI 直接读取的开发 skill，可用于开发同类型应用，或以其为基座构建应用型程序。</li>
-              <li>修复中文等多字节字符显示与解析乱码的问题。</li>
-              <li>修复切换字符编码后历史数据未重新解析、ASCII / Latin-1 编解码不一致及 UTF-16LE 换行误判的问题。</li>
-              <li>解析结果导出写入 UTF-8 BOM，修复 Excel 中文乱码。</li>
-              <li>重构文本解析：自动识别支持等号与冒号两种分隔符，整数与小数统一匹配，并修正频域图通道的可选判定。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v1.6 版本 · 26/9/6</strong>
-            <ul>
-              <li>修复串口接收数据特殊情况下监视器多出空行的问题。</li>
-              <li>优化设备连接管理中组件的显示效果。</li>
-              <li>优化图框的部分显示效果和操作逻辑。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v1.5 版本 · 26/7/9</strong>
-            <ul>
-              <li>"自动硬件流控"更名为"RTS/CTS 流控"，名称更准确。</li>
-              <li>重构 TX/RX 收发与换行符显示逻辑，优化监视器渲染与事件处理。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v1.4 版本 · 26/7/4</strong>
-            <ul>
-              <li>优化页面配色与扁平化设计，浅色/深色模式分离。</li>
-              <li>优化预设发送交互逻辑，通过开关控制全局快捷键的预设发送。</li>
-              <li>新增解析配置帮助提示，支持悬浮查看规则说明。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v1.3 版本 · 26/6/30</strong>
-            <ul>
-              <li>新增柱状图，支持通道选择、纵轴缩放与自动量程。</li>
-              <li>name 标签匹配逻辑改为后缀数字匹配（name0↔int0），规则格式更灵活。</li>
-              <li>预设发送支持单字符快捷键，按下即发；自动全选，替换即生效。</li>
-              <li>修复 GitHub 历史版本仓库，优化离线版本使用体验。</li>
-              <li>优化紧凑显示模式、布局间距与各面板一致性。</li>
-              <li>优化通道交互、图框渲染、频域图通道筛选与 name 动态字段跟踪。</li>
-              <li>优化时间线回放、配置导入导出的图框状态同步与持久化。</li>
-              <li>优化模板解析、发送数据过滤与复选框样式统一。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v1.2 版本 · 26/6/11</strong>
-            <ul>
-              <li>支持定时、触发和预设发送在十六进制模式下保留原始字节，统一发送匹配与显示逻辑。</li>
-              <li>支持高级发送展开区高度拖动调整及各模块拖拽排序。</li>
-              <li>支持预设发送添加备注描述，监视器中显示发送与匹配状态标识。</li>
-              <li>优化十六进制结构解析，支持间隔符占位和帧尾留空的宽匹配逻辑。</li>
-              <li>优化实时解析结果展示，支持横向滚动、展开和折叠。</li>
-              <li>修正连接状态下修改串口参数未立即生效的问题。</li>
-              <li>新增全局配置导入导出与还原，统一保存设备、发送、解析及图框配置。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v1.1 版本 · 26/5/30</strong>
-            <ul>
-              <li>支持设置、输入状态在退出后自动保存，下次加载时恢复使用。</li>
-              <li>支持离线版本的下载和离线版本使用，并支持离线状态识别。</li>
-              <li>优化视觉效果，包括弹窗、下拉状态和窄屏悬浮窗的模糊背景。</li>
-              <li>新增关于弹窗、版本日志、工具手册、GitHub 和问题反馈入口。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v1.0 版本 · 26/5/24</strong>
-            <ul>
-              <li>支持串口监视、设备连接管理、VID/PID 显示、串口参数配置及硬件流控与信号控制。</li>
-              <li>支持深浅主题自动切换及宽屏/窄屏两种布局策略。</li>
-              <li>加入自动重连机制，设备插拔或连接丢失后可尝试恢复。</li>
-              <li>加入失焦自动断连机制，窗口失焦时释放串口，恢复焦点后继续使用。</li>
-              <li>支持图形解析，含文本解析、十六进制结构解析、自动识别规则及实时结果展示。</li>
-              <li>支持时域图与频域图绘制，可绑定解析通道并调整视图范围与量程策略。</li>
-              <li>支持时间线系统，含实时冻结、录制归档、回放、导入导出与解析配置复用。</li>
-              <li>时间线支持导入/导出 BIN/TXT/CSV 原始文件及 TXT/CSV 解析结果。</li>
-              <li>支持手动、定时、触发和预设发送等串口调试工作流。</li>
-            </ul>
           </div>
         </div>
       </div>
