@@ -45,7 +45,7 @@ SERIALWEB-AGENT-PROMPT — 给 AI 的提示词（请先读完这段，再动手�
 
 完整指南（务必先取回并通读；骨架代码 / 分帧细则 / 绘图配方 / 下位机与硬件设计 / 坑清单）：
   本地：skills/html-webserial-app/SKILL.md
-其它 AI 入口：/llms.txt 、/AGENTS.md
+其它 AI 入口：/llms.txt 、/ai/AGENTS.md
 
 ━━━ 情况 B：用户要你修改这个 index.html 本身 ━━━
 · 用“精确字符串替换”编辑；不要用 shell 脚本/正则批量改写（会破坏编码、换行、模板字符串）。

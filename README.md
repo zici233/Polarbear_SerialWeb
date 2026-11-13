@@ -1,8 +1,6 @@
-# SerialWeb 网页串口调试与图形解析工具
+# Polarbear_SerialWeb 网页串口调试与图形解析工具
 
-**当前版本作者：zhc** · [当前版本源码](https://github.com/zici233/Polarbear_SerialWeb)
-
-本分支已适配 **StandardRobot++ 上位机协议**：默认主页面显示 IMU 姿态、欧拉角和角速度，自定义调试包自动生成可选绘图通道，同时保留设备连接管理与通用串口功能。连接后选择「StandardRobot++ 协议」即可使用，详见 [协议格式、操作说明与验证方法](docs/standardrobot-protocol.md)。
+已适配 **StandardRobot++ 上位机协议**：默认主页面显示 IMU 姿态、欧拉角和角速度，自定义调试包自动生成可选绘图通道，同时保留设备连接管理与通用串口功能。连接后选择「StandardRobot++ 协议」即可使用，详见 [协议格式、操作说明与验证方法](docs/standardrobot-protocol.md)。
 
 StandardRobot++ 模式下，机器人运行数据在 IMU 下方分组显示；绘图来源只提供自定义调试数据，通道列表直接使用设备发送的字段名称。
 
@@ -170,7 +168,7 @@ StandardRobot++ 模式下，机器人运行数据在 IMU 下方分组显示；�
 | 入口 | 位置 | 说明 |
 | --- | --- | --- |
 | `llms.txt` | 站点根 | 供只抓纯文本的 AI 使用的索引 |
-| `AGENTS.md` | 仓库根 | 仓库级 AI 约定与结构说明 |
+| `ai/AGENTS.md` | ai 目录 | 仓库级 AI 约定与结构说明 |
 | `ai/agent-prompt.md` | 仓库 | 内嵌提示词的**唯一来源** |
 
 ### 修改 index.html 的注意事项
@@ -186,8 +184,8 @@ index.html                            # 应用本体（单文件）
 release/v2.1/                         # 仅保留最新的历史版本快照（index.html + LICENSE + README.md）
 skills/html-webserial-app/SKILL.md    # 面向 AI/开发者的实战开发指南
 ai/agent-prompt.md                    # 内嵌提示词的唯一来源
+ai/AGENTS.md                          # 仓库级 AI 入口约定
 tools/sync-agent-prompt.mjs           # 提示词注入 / 校验脚本
-AGENTS.md                             # 仓库级 AI 入口约定
 llms.txt                              # 站点根 AI 索引
 LICENSE                               # AGPL-3.0
 README.md                             # 本文件

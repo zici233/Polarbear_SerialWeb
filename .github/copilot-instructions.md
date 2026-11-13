@@ -1,4 +1,4 @@
-# AI 助手约定（SerialWeb）
+# AI 助手约定（Polarbear_SerialWeb）
 
 ## 版权与出处
 
@@ -8,7 +8,7 @@
 
 ## 读取入口（三者内容一致）
 
-- `AGENTS.md`（仓库入口）
+- `ai/AGENTS.md`（仓库入口）
 - `index.html` 内嵌提示词：源码搜索 `SERIALWEB-AGENT-PROMPT`，或读 `<body>` 末尾 `id="ai-agent-prompt"` 的元素（对用户不可见、不可选中，但整页文本提取能拿到），或 `document.getElementById('ai-agent-prompt').textContent`
   （正文来源 `ai/agent-prompt.md`，用 `node tools/sync-agent-prompt.mjs` 注入）
 - `llms.txt`（站点根纯文本索引）
@@ -17,7 +17,7 @@
 
 - `skills/html-webserial-app/SKILL.md` —— 连接/发送/接收分帧/解析/绘图/下位机协议设计的实战指南，含可直接复制的可运行骨架与坑清单
 
-再读 `AGENTS.md` 了解本仓库定位（它是参考实现，不是你必须改造的对象）。
+再读 `ai/AGENTS.md` 了解本仓库定位（它是参考实现，不是你必须改造的对象）。
 
 ## 若不是在构建新应用，而是在改本仓库
 
