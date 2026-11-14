@@ -5594,10 +5594,16 @@
     .scope-channel span { overflow-wrap: anywhere; }
     .scope-channel b { font: 600 11px ui-monospace, monospace; color: var(--scope-color); }
     .scope-channel.is-muted { opacity: 0.45; text-decoration: line-through; }
+    .chart-color-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+    .chart-color-row > span { min-width: 0; overflow-wrap: anywhere; font-size: 12px; }
+    .chart-color-options { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chart-color-swatch { width: 22px; height: 22px; padding: 0; border: 2px solid var(--bg-panel-strong); border-radius: 50%; background: var(--swatch-color); cursor: pointer; }
+    .chart-color-swatch[aria-pressed="true"] { outline: 2px solid var(--text); outline-offset: 1px; }
+    .chart-color-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .scope-info-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
     .scope-info-row .scope-info { flex: 1 1 240px; min-width: 0; }
     .scope-info-row .chart-view-chip { position: static; opacity: 1; transform: none; margin-right: 12px; flex-shrink: 0; }
-    .chart-panel > .chart-config { top: 64px; }
+    .chart-panel > .chart-config { top: 64px; bottom: auto; max-height: min(420px, 60vh); overflow: auto; }
     @media (max-width: 720px) {
       .chart-panel > .chart-config { position: static; top: auto; right: auto; width: 100%; max-width: 100%; max-height: min(420px, 60vh); overflow: auto; }
     }
@@ -6235,7 +6241,8 @@
       const CHART_ZOOM_MIN = 0.02;
       const CHART_ZOOM_MAX = 240;
       const MODE_PULSE_MS = 500;
-      const CHART_COLORS = ['#1d7af2', '#0e9f6e', '#d97706', '#c2410c', '#8b5cf6', '#ef4444', '#14b8a6'];
+      const CHART_COLORS = ['#1d7af2', '#0e9f6e', '#d97706', '#c2410c', '#8b5cf6', '#ef4444', '#14b8a6', '#ec4899'];
+      const CHART_COLOR_NAMES = ['蓝色', '绿色', '黄色', '橙色', '紫色', '红色', '青色', '粉色'];
       const TIMELINE_BIN_MAGIC = new Uint8Array([0x57, 0x53, 0x4c, 0x42, 0x49, 0x4e, 0x31, 0x00]);
       const appEl = document.body;
 
@@ -12018,6 +12025,7 @@
           name: chartTitle,
           open: false,
           bindings: [],
+          bindingColors: {},
           robotGroup: state.parserMode === 'robot' ? 'debug' : '',
           channelPickerOpen: false,
           yAxisBindingKey: '',
@@ -12078,9 +12086,9 @@
         return CHART_COLORS[index % CHART_COLORS.length];
       }
 
-      function getFieldColorStrong(key) {
-        const base = getFieldColor(key);
-        return base;
+      function getChartFieldColor(chart, key) {
+        const color = chart.bindingColors?.[key];
+        return CHART_COLORS.includes(color) ? color : getFieldColor(key);
       }
 
       function getResultCardColor(key) {
@@ -13010,7 +13018,7 @@
           </label>`,
           `<div class="chart-axis-binding-group ${!canSelectChartYAxisBinding(chart) ? 'hidden' : ''}" data-chart-y-binding-group>
             <button class="chart-axis-binding-option ${yAxisBindingKey === '__all__' ? 'is-active' : ''}" type="button" data-chart-y-binding-option="__all__">全部通道</button>
-            ${chart.bindings.map((key) => `<button class="chart-axis-binding-option is-colorized ${key === yAxisBindingKey ? 'is-active' : ''}" style="--picker-color:${escapeHtml(getFieldColor(key))};--picker-color-strong:${escapeHtml(getFieldColorStrong(key))}" type="button" data-chart-y-binding-option="${escapeHtml(key)}">${escapeHtml(getFieldDisplayLabel(key))}</button>`).join('')}
+            ${chart.bindings.map((key) => `<button class="chart-axis-binding-option is-colorized ${key === yAxisBindingKey ? 'is-active' : ''}" style="--picker-color:${getChartFieldColor(chart, key)};--picker-color-strong:${getChartFieldColor(chart, key)}" type="button" data-chart-y-binding-option="${escapeHtml(key)}">${escapeHtml(getFieldDisplayLabel(key))}</button>`).join('')}
           </div>`
         ].join('');
         const chartHeight = Math.max(140, Number(chart.heightPx) || 220);
@@ -13090,6 +13098,7 @@
             </div>
             <div class="chart-config chart-flyout ${chart.open ? 'open' : ''}">
               ${chart.type === 'bar' ? barConfig : timeConfig}
+              <div class="chart-config-section"><div class="mini-label">曲线颜色</div><div data-chart-colors></div></div>
             </div>
             ${dataSelector}
             <div class="chart-canvas-wrap" style="height:${chartHeight}px">
@@ -13286,6 +13295,11 @@
         }
         panel.querySelectorAll('[data-chart-y-binding-option]').forEach((button) => {
           button.classList.toggle('is-active', button.dataset.chartYBindingOption === chart.yAxisBindingKey);
+          if (button.dataset.chartYBindingOption !== '__all__') {
+            const color = getChartFieldColor(chart, button.dataset.chartYBindingOption);
+            button.style.setProperty('--picker-color', color);
+            button.style.setProperty('--picker-color-strong', color);
+          }
         });
         const yLabel = panel.querySelector('[data-chart-axis-y-label]');
         if (yLabel) yLabel.textContent = '缩放纵轴';
@@ -13538,12 +13552,21 @@
         const readings = chart.scopeHover ? getScopeReadings(chart, chart.scopeHover.x) : [];
         const legend = panel.querySelector('[data-scope-legend]');
         const signature = JSON.stringify(chart.bindings);
+        const colorPicker = panel.querySelector('[data-chart-colors]');
+        if (colorPicker.dataset.bindings !== signature) {
+          colorPicker.innerHTML = chart.bindings.map((key) => `<div class="chart-color-row"><span>${escapeHtml(getFieldDisplayLabel(key))}</span><div class="chart-color-options" role="group" aria-label="${escapeHtml(getFieldDisplayLabel(key))}曲线颜色">${CHART_COLORS.map((color, index) => `<button type="button" class="chart-color-swatch" data-chart-color-key="${escapeHtml(key)}" data-chart-color="${color}" style="--swatch-color:${color}" title="${CHART_COLOR_NAMES[index]}" aria-label="${CHART_COLOR_NAMES[index]}" aria-pressed="false"></button>`).join('')}</div></div>`).join('') || '<span class="panel-subtitle">请先选择通道</span>';
+          colorPicker.dataset.bindings = signature;
+        }
+        colorPicker.querySelectorAll('[data-chart-color]').forEach((button) => {
+          button.setAttribute('aria-pressed', String(getChartFieldColor(chart, button.dataset.chartColorKey) === button.dataset.chartColor));
+        });
         if (legend.dataset.bindings !== signature) {
           legend.innerHTML = chart.bindings.map((key) => `<button class="scope-channel" type="button" data-scope-channel="${escapeHtml(key)}" style="--scope-color:${getFieldColor(key)}"><i></i><span>${escapeHtml(getFieldDisplayLabel(key))}</span><b data-scope-value>—</b></button>`).join('');
           legend.dataset.bindings = signature;
         }
         legend.querySelectorAll('[data-scope-channel]').forEach((button) => {
           const key = button.dataset.scopeChannel;
+          button.style.setProperty('--scope-color', getChartFieldColor(chart, key));
           const hidden = (chart.hiddenBindings || []).includes(key);
           button.classList.toggle('is-muted', hidden);
           button.setAttribute('aria-pressed', String(!hidden));
@@ -13875,7 +13898,7 @@
                   );
                 })()
               : (perKeyAutoRange[entry.key] || { min: localMin, max: localMax, range: Math.max(1e-9, localMax - localMin) }));
-          const color = getFieldColor(entry.key);
+          const color = getChartFieldColor(chart, entry.key);
           chart.scopeTracks.push({ key: entry.key, points: seriesList[index], getX: (p) => p.t, getY: (p) => p.v });
           const reducedPixelPoints = samplePixelPath(
             entry.points.map((point) => ({
@@ -13999,7 +14022,7 @@
         bindKeys.forEach(function(key, index) {
           var series = getScopeSeries(chart, key, 1);
           var value = 0;
-          var color = getFieldColor(key);
+          var color = getChartFieldColor(chart, key);
           if (Array.isArray(series) && series.length) {
             var last = series[series.length - 1];
             if (last && Number.isFinite(last.v)) value = last.v;
@@ -14268,7 +14291,7 @@
                 : (yAxisBindingKey === '__all__'
                     ? { min: 0, max: globalAmpMax, range: Math.max(1e-9, globalAmpMax) }
                     : (chart.drawMeta.perKeyAutoRange?.[keys[index]] || { min: 0, max: ampMax, range: Math.max(1e-9, ampMax) })));
-          const color = getFieldColor(keys[index]);
+          const color = getChartFieldColor(chart, keys[index]);
           const pixelPoints = samplePixelPath(
             spectrumSlice.map((item) => ({
               x: ((item.f - xOuterMin) / Math.max(1e-9, xOuterMax - xOuterMin)) * width,
@@ -14896,6 +14919,7 @@
           },
           channels: {
             bindings: [...(chart.bindings || [])],
+            colors: { ...(chart.bindingColors || {}) },
             robotGroup: chart.robotGroup || '',
             hiddenBindings: [...(chart.hiddenBindings || [])],
             unifyScale: Boolean(chart.alignScale),
@@ -14933,6 +14957,7 @@
         base.open = Boolean(rawChart?.panel?.configOpen);
         base.heightPx = Math.max(140, Number(rawChart?.panel?.heightPx) || base.heightPx || 220);
         base.bindings = Array.isArray(rawChart?.channels?.bindings) ? [...rawChart.channels.bindings] : [];
+        base.bindingColors = Object.fromEntries(Object.entries(rawChart?.channels?.colors || {}).filter(([, color]) => CHART_COLORS.includes(color)));
         base.robotGroup = ROBOT_CHART_GROUPS.some(([value]) => value === rawChart?.channels?.robotGroup) ? rawChart.channels.robotGroup : '';
         base.alignScale = Boolean(rawChart?.channels?.unifyScale ?? true);
         base.yAxisBindingKey = String(rawChart?.channels?.selectedYAxisBinding || '');
@@ -15889,6 +15914,16 @@
       function handleChartClick(event) {
         const chart = findChartFromEvent(event.target);
         if (!chart) return;
+        const colorOption = event.target.closest('[data-chart-color]');
+        if (colorOption) {
+          const key = colorOption.dataset.chartColorKey;
+          const color = colorOption.dataset.chartColor;
+          if (chart.bindings.includes(key) && CHART_COLORS.includes(color)) {
+            chart.bindingColors[key] = color;
+            scheduleChartPaint(true);
+          }
+          return;
+        }
         const channel = event.target.closest('[data-scope-channel]');
         if (channel) {
           const key = channel.dataset.scopeChannel;
